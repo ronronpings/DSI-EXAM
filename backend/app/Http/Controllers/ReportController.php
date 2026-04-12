@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Sale;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -21,13 +22,14 @@ class ReportController extends Controller
             ],
         ]);
     }
-    public function printableSales(Request $request): JsonResponse
+
+    public function printableSales(Request $request)
     {
         $sales = $this->salesQuery($request)->get();
 
-        return response()->json([
-            'title' => 'Printable Sales Report',
-            'generated_at' => now()->toDateTimeString(),
+        $pdf = Pdf::loadView('reports.sales-pdf', [
+            'sales' => $sales,
+            'generatedAt' => now(),
             'filters' => [
                 'date_from' => $request->get('date_from'),
                 'date_to' => $request->get('date_to'),
@@ -37,14 +39,14 @@ class ReportController extends Controller
                 'total_sales' => (float) $sales->sum('total_amount'),
                 'total_transactions' => $sales->count(),
             ],
-            'data' => $sales,
-        ]);
+        ])->setPaper('a4', 'portrait');
+
+        return $pdf->stream('sales-report.pdf');
     }
 
     public function downloadSalesCsv(Request $request): StreamedResponse
     {
         $sales = $this->salesQuery($request)->get();
-
         $filename = 'sales-report-' . now()->format('Ymd-His') . '.csv';
 
         return response()->streamDownload(function () use ($sales) {
@@ -65,8 +67,8 @@ class ReportController extends Controller
             foreach ($sales as $sale) {
                 fputcsv($handle, [
                     $sale->invoice_number,
-                    trim($sale->customer->first_name . ' ' . $sale->customer->last_name),
-                    $sale->cashier->name,
+                    trim(($sale->customer->first_name ?? '') . ' ' . ($sale->customer->last_name ?? '')),
+                    $sale->cashier->name ?? 'N/A',
                     $sale->subtotal,
                     $sale->tax,
                     $sale->discount,

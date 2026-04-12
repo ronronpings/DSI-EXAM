@@ -38,7 +38,6 @@ class SaleController extends Controller
 
     public function store(StoreSaleRequest $request): JsonResponse
     {
-       
         $sale = $this->saleService->create($request->validated(), $request->user()->id);
 
         return response()->json([
@@ -58,11 +57,11 @@ class SaleController extends Controller
 
     public function update(UpdateSaleStatusRequest $request, Sale $sale): JsonResponse
     {
-        $sale->update($request->validated());
+        $updatedSale = $this->saleService->updateStatus($sale, $request->validated('status'));
 
         return response()->json([
             'message' => 'Sale updated successfully.',
-            'data' => $sale->fresh(['customer', 'cashier', 'items.product']),
+            'data' => $updatedSale,
         ]);
     }
 

@@ -13,7 +13,7 @@ class PermissionMiddleware
      *
      * @param  Closure(Request): (Response)  $next
      */
-    public function handle(Request $request, Closure $next, String $permission): Response
+    public function handle(Request $request, Closure $next, String $permissions): Response
     {
         $user = $request->user();
 
@@ -41,20 +41,18 @@ class PermissionMiddleware
             ], 401);
         }
 
-        $allowedPermissions = explode('|', $permission);
-        $hasPermission = false;
+        $permissionList = collect(explode('|', $permissions))
+            ->map(fn ($permission) => trim($permission))
+            ->filter();
 
-        foreach ($allowedPermissions as $p) {
-            if ($user->hasPermission($p)) {
-                $hasPermission = true;
-                break;
-            }
-        }
+        $hasPermission = $permissionList->contains(
+            fn ($permission) => $user->hasPermission($permission)
+        );
 
         if (! $hasPermission) {
             return response()->json([
                 'message' => 'You do not have permission to perform this action.',
-                'required_permission' => $permission,
+                'required_permissions' => $permissionList->values(),
             ], 403);
         }
 

@@ -62,4 +62,8 @@ class User extends Authenticatable
             ->whereHas('permissions', fn ($query) => $query->where('name', $permission))
             ->exists();
     }
+    public function getRoleNamesAttribute(): array
+    {
+        return $this->roles->pluck('name')->values()->all();
+    }
 }

@@ -5,12 +5,13 @@ use App\Http\Controllers\Api\CustomerController;
 use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\ProductController;
 use App\Http\Controllers\Api\SaleController;
+use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\ReportController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('auth')->group(function () {
     Route::post('/login', [AuthController::class, 'login'])
-    ->middleware('throttle:5,1');
+        ->middleware('throttle:5,1');
 });
 
 Route::middleware('auth:sanctum')->group(function () {
@@ -37,9 +38,18 @@ Route::middleware('auth:sanctum')->group(function () {
         ->middleware('permission:manage_products');
     Route::put('products/{product}', [ProductController::class, 'update'])
         ->middleware('permission:manage_products');
+    Route::patch('products/{product}', [ProductController::class, 'update'])
+        ->middleware('permission:manage_products');
     Route::delete('products/{product}', [ProductController::class, 'destroy'])
         ->middleware('permission:manage_products');
 
     Route::apiResource('sales', SaleController::class)
         ->middleware('permission:manage_sales');
+
+    Route::get('/users/roles', [UserController::class, 'roles'])
+        ->middleware('permission:manage_users');
+    Route::post('/users/{user}/assign-roles', [UserController::class, 'assignRoles'])
+        ->middleware('permission:manage_users');
+    Route::apiResource('users', UserController::class)
+        ->middleware('permission:manage_users');
 });

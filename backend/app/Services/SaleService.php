@@ -11,17 +11,27 @@ class SaleService
 {
     public function create(array $validated, int $userId): Sale
     {
-       
         return DB::transaction(function () use ($validated, $userId) {
-            $itemsPayload = $validated['items'];
             $tax = (float) ($validated['tax'] ?? 0);
             $discount = (float) ($validated['discount'] ?? 0);
+
+            $groupedItems = collect($validated['items'])
+                ->groupBy('product_id')
+                ->map(function ($items, $productId) {
+                    return [
+                        'product_id' => (int) $productId,
+                        'quantity' => collect($items)->sum('quantity'),
+                    ];
+                })
+                ->values();
 
             $subtotal = 0;
             $preparedItems = [];
 
-            foreach ($itemsPayload as $item) {
-                $product = Product::query()->lockForUpdate()->findOrFail($item['product_id']);
+            foreach ($groupedItems as $item) {
+                $product = Product::query()
+                    ->lockForUpdate()
+                    ->findOrFail($item['product_id']);
 
                 if (! $product->is_active) {
                     throw ValidationException::withMessages([
@@ -31,7 +41,9 @@ class SaleService
 
                 if ($product->stock_quantity < $item['quantity']) {
                     throw ValidationException::withMessages([
-                        'items' => ["Insufficient stock for {$product->name}."],
+                        'items' => [
+                            "Insufficient stock for {$product->name}. Available: {$product->stock_quantity}, requested: {$item['quantity']}.",
+                        ],
                     ]);
                 }
 
@@ -73,6 +85,29 @@ class SaleService
             }
 
             return $sale->load(['customer', 'cashier', 'items.product']);
+        });
+    }
+
+    public function updateStatus(Sale $sale, string $status): Sale
+    {
+        return DB::transaction(function () use ($sale, $status) {
+            $sale->loadMissing('items.product');
+
+            if ($sale->status !== 'cancelled' && $status === 'cancelled') {
+                foreach ($sale->items as $item) {
+                    Product::query()
+                        ->whereKey($item->product_id)
+                        ->lockForUpdate()
+                        ->firstOrFail()
+                        ->increment('stock_quantity', $item->quantity);
+                }
+            }
+
+            $sale->update([
+                'status' => $status,
+            ]);
+
+            return $sale->fresh()->load(['customer', 'cashier', 'items.product']);
         });
     }
 
