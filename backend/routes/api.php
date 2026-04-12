@@ -9,7 +9,8 @@ use App\Http\Controllers\ReportController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('auth')->group(function () {
-    Route::post('/login', [AuthController::class, 'login']);
+    Route::post('/login', [AuthController::class, 'login'])
+    ->middleware('throttle:5,1');
 });
 
 Route::middleware('auth:sanctum')->group(function () {
@@ -28,7 +29,15 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('customers', CustomerController::class)
         ->middleware('permission:manage_customers');
 
-    Route::apiResource('products', ProductController::class)
+    Route::get('products', [ProductController::class, 'index'])
+        ->middleware('permission:manage_products|manage_sales');
+    Route::get('products/{product}', [ProductController::class, 'show'])
+        ->middleware('permission:manage_products|manage_sales');
+    Route::post('products', [ProductController::class, 'store'])
+        ->middleware('permission:manage_products');
+    Route::put('products/{product}', [ProductController::class, 'update'])
+        ->middleware('permission:manage_products');
+    Route::delete('products/{product}', [ProductController::class, 'destroy'])
         ->middleware('permission:manage_products');
 
     Route::apiResource('sales', SaleController::class)

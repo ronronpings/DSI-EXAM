@@ -41,7 +41,17 @@ class PermissionMiddleware
             ], 401);
         }
 
-        if (! $user->hasPermission($permission)) {
+        $allowedPermissions = explode('|', $permission);
+        $hasPermission = false;
+
+        foreach ($allowedPermissions as $p) {
+            if ($user->hasPermission($p)) {
+                $hasPermission = true;
+                break;
+            }
+        }
+
+        if (! $hasPermission) {
             return response()->json([
                 'message' => 'You do not have permission to perform this action.',
                 'required_permission' => $permission,

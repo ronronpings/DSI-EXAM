@@ -26,6 +26,11 @@ const menuItems = [
 ]
 
 function Sidebar({ drawerWidth }) {
+  const userStr = localStorage.getItem('user')
+  const user = userStr ? JSON.parse(userStr) : null
+  const userRole = user?.roles?.[0]?.display_name || user?.roles?.[0]?.name || 'Staff'
+  const userName = user?.name || 'Operations Panel'
+
   return (
     <Drawer
       variant="permanent"
@@ -55,11 +60,11 @@ function Sidebar({ drawerWidth }) {
           >
             <StorefrontRoundedIcon sx={{ color: '#fff' }} />
           </Box>
-          <Typography variant="h6" sx={{ color: '#f8fafc' }}>
-            Sales Admin
+          <Typography variant="h6" sx={{ color: '#f8fafc', textTransform: 'capitalize' }}>
+            {userRole}
           </Typography>
           <Typography variant="body2" sx={{ color: 'rgba(226, 232, 240, 0.72)' }}>
-            Tech company operations panel
+            {userName}
           </Typography>
         </Box>
       </Toolbar>
