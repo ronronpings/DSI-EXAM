@@ -2,6 +2,7 @@ import AssessmentRoundedIcon from '@mui/icons-material/AssessmentRounded'
 import DashboardRoundedIcon from '@mui/icons-material/DashboardRounded'
 import Groups2RoundedIcon from '@mui/icons-material/Groups2Rounded'
 import Inventory2RoundedIcon from '@mui/icons-material/Inventory2Rounded'
+import ManageAccountsRoundedIcon from '@mui/icons-material/ManageAccountsRounded'
 import PointOfSaleRoundedIcon from '@mui/icons-material/PointOfSaleRounded'
 import StorefrontRoundedIcon from '@mui/icons-material/StorefrontRounded'
 import {
@@ -23,14 +24,10 @@ const menuItems = [
   { label: 'Products', path: '/products', icon: <Inventory2RoundedIcon /> },
   { label: 'Sales', path: '/sales', icon: <PointOfSaleRoundedIcon /> },
   { label: 'Reports', path: '/reports', icon: <AssessmentRoundedIcon /> },
+  { label: 'Users', path: '/users', icon: <ManageAccountsRoundedIcon /> },
 ]
 
 function Sidebar({ drawerWidth }) {
-  const userStr = localStorage.getItem('user')
-  const user = userStr ? JSON.parse(userStr) : null
-  const userRole = user?.roles?.[0]?.display_name || user?.roles?.[0]?.name || 'Staff'
-  const userName = user?.name || 'Operations Panel'
-
   return (
     <Drawer
       variant="permanent"
@@ -60,11 +57,11 @@ function Sidebar({ drawerWidth }) {
           >
             <StorefrontRoundedIcon sx={{ color: '#fff' }} />
           </Box>
-          <Typography variant="h6" sx={{ color: '#f8fafc', textTransform: 'capitalize' }}>
-            {userRole}
+          <Typography variant="h6" sx={{ color: '#f8fafc' }}>
+            Sales Admin
           </Typography>
           <Typography variant="body2" sx={{ color: 'rgba(226, 232, 240, 0.72)' }}>
-            {userName}
+            Tech company operations panel
           </Typography>
         </Box>
       </Toolbar>

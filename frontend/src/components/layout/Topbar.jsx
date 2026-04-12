@@ -18,6 +18,7 @@ const titles = {
   '/products': 'Product Inventory',
   '/sales': 'Sales Transactions',
   '/reports': 'Sales Reports',
+  '/users': 'User Management',
 }
 
 function Topbar({ drawerWidth }) {
