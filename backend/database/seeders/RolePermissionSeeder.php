@@ -16,7 +16,7 @@ class RolePermissionSeeder extends Seeder
     {
         //
         $permissions = [
-            'view_dashboards' => 'View Dashboards',
+            'view_dashboard' => 'View Dashboards',
             'manage_customers' => 'Manage Customers',
             'manage_products' => 'Manage Products',
             'manage_sales' => 'Manage Sales',

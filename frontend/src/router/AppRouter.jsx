@@ -1,6 +1,6 @@
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import AppShell from '../components/layout/AppShell.jsx'
-import DashboardPage from '../pages/Dashboard.jsx'
+import DashboardPage from '../pages/DashboardPage.jsx'
 import CustomersPage from '../pages/CustomersPage.jsx'
 import LoginPage from '../pages/LoginPage.jsx'
 import ProductsPage from '../pages/ProductsPage.jsx'

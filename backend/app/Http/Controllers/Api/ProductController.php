@@ -11,9 +11,26 @@ use Illuminate\Http\Request;
 class ProductController extends Controller
 {
     //
-    public function index()
+    public function index(Request $request)
     {
+        $products = Product::query()
+        ->when($request->filled('search'), function ($query) use ($request) {
+            $search = preg_replace('/\s+/', '', $request->string('search'));
 
+            $query->where(function ($subQuery) use ($search) {
+                $subQuery
+                    ->whereRaw("REPLACE(sku, ' ', '') LIKE ?", ["%{$search}%"])
+                    ->orWhereRaw("REPLACE(name, ' ', '') LIKE ?", ["%{$search}%"])
+                    ->orWhereRaw("REPLACE(description, ' ', '') LIKE ?", ["%{$search}%"]);
+            });
+        })
+        ->when($request->filled('is_active'), function ($query) use ($request) {
+            $query->where('is_active', filter_var($request->get('is_active'), FILTER_VALIDATE_BOOLEAN));
+        })
+        ->latest()
+        ->paginate((int) $request->get('per_page', 10));
+
+    return response()->json($products);
     }
 
     public function store(StoreProductRequest $request)

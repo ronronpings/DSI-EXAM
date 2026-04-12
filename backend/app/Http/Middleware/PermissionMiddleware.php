@@ -17,6 +17,24 @@ class PermissionMiddleware
     {
         $user = $request->user();
 
+        //  dd([
+        //     'user_id' => $user?->id,
+        //     'email' => $user?->email,
+        //     'required_permission' => $permission,
+        //     'role_names' => $user?->roles()->pluck('name')->all(),
+        //     'permissions_from_roles' => $user?->roles()
+        //         ->with('permissions:id,name')
+        //         ->get()
+        //         ->pluck('permissions')
+        //         ->flatten()
+        //         ->pluck('name')
+        //         ->unique()
+        //         ->values()
+        //         ->all(),
+        //     'has_permission_result' => $user?->hasPermission($permission),
+        // ]);
+
+
         if (! $user) {
             return response()->json([
                 'message' => 'Unauthenticated.',
