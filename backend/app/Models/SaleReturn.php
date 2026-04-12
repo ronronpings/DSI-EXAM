@@ -4,29 +4,33 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class SaleItem extends Model
+class SaleReturn extends Model
 {
     protected $fillable = [
         'sale_id',
-        'product_id',
-        'quantity',
-        'unit_price',
-        'line_total',
+        'user_id',
+        'return_number',
+        'reason',
+        'total_amount',
+        'returned_at',
     ];
+
     protected $casts = [
-        'unit_price' => 'decimal:2',
-        'line_total' => 'decimal:2',
+        'total_amount' => 'decimal:2',
+        'returned_at' => 'datetime',
     ];
+
     public function sale()
     {
         return $this->belongsTo(Sale::class);
     }
-    public function product()
+
+    public function user()
     {
-        return $this->belongsTo(Product::class);
+        return $this->belongsTo(User::class);
     }
 
-    public function returnItems()
+    public function items()
     {
         return $this->hasMany(SaleReturnItem::class);
     }

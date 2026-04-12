@@ -20,7 +20,7 @@ class SaleController extends Controller
     public function index(Request $request): JsonResponse
     {
         $sales = Sale::query()
-            ->with(['customer', 'cashier', 'items.product'])
+            ->with(['customer', 'cashier', 'items.product', 'returns.items'])
             ->when($request->filled('status'), function ($query) use ($request) {
                 $query->where('status', $request->string('status'));
             })
@@ -48,7 +48,7 @@ class SaleController extends Controller
 
     public function show(Sale $sale): JsonResponse
     {
-        $sale->load(['customer', 'cashier', 'items.product']);
+        $sale->load(['customer', 'cashier', 'items.product', 'returns.items.product', 'returns.user']);
 
         return response()->json([
             'data' => $sale,

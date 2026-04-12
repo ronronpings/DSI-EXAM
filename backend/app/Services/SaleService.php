@@ -91,15 +91,25 @@ class SaleService
     public function updateStatus(Sale $sale, string $status): Sale
     {
         return DB::transaction(function () use ($sale, $status) {
-            $sale->loadMissing('items.product');
+            $sale->loadMissing('items.returnItems');
 
-            if ($sale->status !== 'cancelled' && $status === 'cancelled') {
+            if (
+                ! in_array($sale->status, ['cancelled', 'returned'], true)
+                && $status === 'cancelled'
+            ) {
                 foreach ($sale->items as $item) {
+                    $returnedQuantity = (int) $item->returnItems->sum('quantity');
+                    $restorableQuantity = max($item->quantity - $returnedQuantity, 0);
+
+                    if ($restorableQuantity === 0) {
+                        continue;
+                    }
+
                     Product::query()
                         ->whereKey($item->product_id)
                         ->lockForUpdate()
                         ->firstOrFail()
-                        ->increment('stock_quantity', $item->quantity);
+                        ->increment('stock_quantity', $restorableQuantity);
                 }
             }
 

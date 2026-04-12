@@ -1,7 +1,7 @@
 import AddRoundedIcon from '@mui/icons-material/AddRounded'
 import DeleteOutlineRoundedIcon from '@mui/icons-material/DeleteOutlineRounded'
 import EditRoundedIcon from '@mui/icons-material/EditRounded'
-import RemoveCircleOutlineRoundedIcon from '@mui/icons-material/RemoveCircleOutlineRounded'
+import KeyboardReturnRoundedIcon from '@mui/icons-material/KeyboardReturnRounded'
 import SearchRoundedIcon from '@mui/icons-material/SearchRounded'
 import {
   Box,
@@ -10,14 +10,8 @@ import {
   CardContent,
   Chip,
   CircularProgress,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
-  Divider,
   IconButton,
   InputAdornment,
-  MenuItem,
   Stack,
   Table,
   TableBody,
@@ -33,7 +27,12 @@ import { useDeferredValue, useEffect, useState } from 'react'
 import toast from 'react-hot-toast'
 import api from '../api/axios.js'
 import getApiErrorMessage from '../utils/getApiErrorMessage.js'
-import { CreateSaleModal, UpdateStatusModal, formatCurrency } from './SaleModal/AddEditSalse.jsx'
+import {
+  CreateSaleModal,
+  ReturnSaleModal,
+  UpdateStatusModal,
+  formatCurrency,
+} from './SaleModal/AddEditSalse.jsx'
 
 function SalesPage() {
   const [sales, setSales] = useState([])
@@ -43,6 +42,7 @@ function SalesPage() {
   const [isFetchingLookups, setIsFetchingLookups] = useState(false)
   const [createOpen, setCreateOpen] = useState(false)
   const [statusOpen, setStatusOpen] = useState(false)
+  const [returnOpen, setReturnOpen] = useState(false)
   const [selectedSale, setSelectedSale] = useState(null)
   const [search, setSearch] = useState('')
   const deferredSearch = useDeferredValue(search)
@@ -60,7 +60,7 @@ function SalesPage() {
     try {
       setLoading(true)
 
-      const statusFilter = deferredSearch && ['paid', 'pending', 'cancelled'].includes(deferredSearch.toLowerCase())
+      const statusFilter = deferredSearch && ['paid', 'pending', 'cancelled', 'partially_returned', 'returned'].includes(deferredSearch.toLowerCase())
         ? deferredSearch.toLowerCase()
         : undefined
 
@@ -122,6 +122,16 @@ function SalesPage() {
     setSelectedSale(null)
   }
 
+  const openReturnDialog = (sale) => {
+    setSelectedSale(sale)
+    setReturnOpen(true)
+  }
+
+  const closeReturnDialog = () => {
+    setReturnOpen(false)
+    setSelectedSale(null)
+  }
+
   const handleDeleteSale = async (sale) => {
     const confirmed = window.confirm(`Delete sale ${sale.invoice_number}? This only works for cancelled sales.`)
 
@@ -168,7 +178,7 @@ function SalesPage() {
         <CardContent>
           <Stack spacing={3}>
             <TextField
-              placeholder="Quick filter by status: paid, pending, cancelled"
+              placeholder="Quick filter by status: paid, pending, cancelled, returned"
               value={search}
               onChange={(event) => {
                 setSearch(event.target.value)
@@ -231,7 +241,18 @@ function SalesPage() {
                         </TableCell>
                         <TableCell>{formatDateTime(sale.sold_at)}</TableCell>
                         <TableCell align="right">
-                          <IconButton color="primary" onClick={() => openStatusDialog(sale)}>
+                          <IconButton
+                            color="warning"
+                            onClick={() => openReturnDialog(sale)}
+                            disabled={sale.status === 'cancelled' || sale.status === 'returned'}
+                          >
+                            <KeyboardReturnRoundedIcon />
+                          </IconButton>
+                          <IconButton
+                            color="primary"
+                            onClick={() => openStatusDialog(sale)}
+                            disabled={sale.status === 'returned' || sale.status === 'partially_returned'}
+                          >
                             <EditRoundedIcon />
                           </IconButton>
                           <IconButton
@@ -282,6 +303,13 @@ function SalesPage() {
         onSuccess={fetchSales}
         selectedSale={selectedSale}
       />
+
+      <ReturnSaleModal
+        open={returnOpen}
+        onClose={closeReturnDialog}
+        onSuccess={fetchSales}
+        selectedSale={selectedSale}
+      />
     </Stack>
   )
 }
@@ -304,6 +332,8 @@ function mapStatusColor(status) {
   if (status === 'paid') return 'success'
   if (status === 'pending') return 'warning'
   if (status === 'cancelled') return 'error'
+  if (status === 'partially_returned') return 'warning'
+  if (status === 'returned') return 'info'
   return 'default'
 }
 

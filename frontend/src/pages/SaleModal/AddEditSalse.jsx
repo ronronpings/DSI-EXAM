@@ -338,3 +338,178 @@ export function UpdateStatusModal({ open, onClose, onSuccess, selectedSale }) {
     </Dialog>
   )
 }
+
+export function ReturnSaleModal({ open, onClose, onSuccess, selectedSale }) {
+  const [saving, setSaving] = useState(false)
+  const [reason, setReason] = useState('')
+  const [returnedAt, setReturnedAt] = useState(getDefaultSoldAt())
+  const [items, setItems] = useState([])
+
+  useEffect(() => {
+    if (!open || !selectedSale) {
+      return
+    }
+
+    setReason('')
+    setReturnedAt(getDefaultSoldAt())
+    setItems(
+      (selectedSale.items ?? []).map((item) => {
+        const returnedQuantity = (selectedSale.returns ?? []).reduce((sum, saleReturn) => {
+          const matchedReturnItem = (saleReturn.items ?? []).find(
+            (returnItem) => returnItem.sale_item_id === item.id,
+          )
+
+          return sum + Number(matchedReturnItem?.quantity ?? 0)
+        }, 0)
+
+        return {
+          sale_item_id: item.id,
+          product_name: item.product?.name ?? 'Unknown Product',
+          purchased_quantity: Number(item.quantity ?? 0),
+          returned_quantity: returnedQuantity,
+          available_quantity: Math.max(Number(item.quantity ?? 0) - returnedQuantity, 0),
+          quantity: 0,
+          unit_price: Number(item.unit_price ?? 0),
+        }
+      }),
+    )
+  }, [open, selectedSale])
+
+  const handleQuantityChange = (saleItemId, value) => {
+    setItems((current) =>
+      current.map((item) =>
+        item.sale_item_id === saleItemId
+          ? {
+              ...item,
+              quantity: Math.max(0, Number(value || 0)),
+            }
+          : item,
+      ),
+    )
+  }
+
+  const selectedItems = items.filter((item) => Number(item.quantity) > 0)
+  const totalAmount = selectedItems.reduce(
+    (sum, item) => sum + item.quantity * item.unit_price,
+    0,
+  )
+
+  const handleSubmit = async (event) => {
+    event.preventDefault()
+
+    if (!selectedSale) {
+      return
+    }
+
+    if (!selectedItems.length) {
+      toast.error('Select at least one item to return.')
+      return
+    }
+
+    const invalidItem = selectedItems.find((item) => item.quantity > item.available_quantity)
+
+    if (invalidItem) {
+      toast.error(`Return quantity exceeds available quantity for ${invalidItem.product_name}.`)
+      return
+    }
+
+    try {
+      setSaving(true)
+
+      await api.post(`/sales/${selectedSale.id}/returns`, {
+        reason,
+        returned_at: formatDateTimeForBackend(returnedAt),
+        items: selectedItems.map((item) => ({
+          sale_item_id: item.sale_item_id,
+          quantity: item.quantity,
+        })),
+      })
+
+      toast.success('Return processed successfully.')
+      onSuccess()
+      onClose()
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, 'Failed to process return.'))
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <Dialog open={open} onClose={() => !saving && onClose()} fullWidth maxWidth="md">
+      <DialogTitle>Process Return</DialogTitle>
+
+      <Box component="form" onSubmit={handleSubmit}>
+        <DialogContent>
+          <Stack spacing={3} sx={{ pt: 1 }}>
+            <Typography color="text.secondary">
+              {selectedSale?.invoice_number} | {selectedSale?.customer?.first_name} {selectedSale?.customer?.last_name}
+            </Typography>
+
+            <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
+              <TextField
+                label="Returned At"
+                type="datetime-local"
+                value={returnedAt}
+                onChange={(event) => setReturnedAt(event.target.value)}
+                fullWidth
+                InputLabelProps={{ shrink: true }}
+              />
+
+              <TextField
+                label="Reason"
+                value={reason}
+                onChange={(event) => setReason(event.target.value)}
+                fullWidth
+              />
+            </Stack>
+
+            <Stack spacing={2}>
+              {items.map((item) => (
+                <Box
+                  key={item.sale_item_id}
+                  sx={{
+                    border: '1px solid rgba(148, 163, 184, 0.22)',
+                    borderRadius: 3,
+                    p: 2,
+                  }}
+                >
+                  <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} alignItems={{ md: 'center' }}>
+                    <Box sx={{ flexGrow: 1 }}>
+                      <Typography fontWeight={700}>{item.product_name}</Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        Purchased: {item.purchased_quantity} | Already returned: {item.returned_quantity} | Available: {item.available_quantity}
+                      </Typography>
+                    </Box>
+
+                    <TextField
+                      label="Return Quantity"
+                      type="number"
+                      inputProps={{ min: 0, max: item.available_quantity }}
+                      value={item.quantity}
+                      onChange={(event) => handleQuantityChange(item.sale_item_id, event.target.value)}
+                      sx={{ width: { xs: '100%', md: 180 } }}
+                    />
+                  </Stack>
+                </Box>
+              ))}
+            </Stack>
+
+            <Card variant="outlined">
+              <CardContent>
+                <SummaryRow label="Return Total" value={formatCurrency(totalAmount)} strong />
+              </CardContent>
+            </Card>
+          </Stack>
+        </DialogContent>
+
+        <DialogActions sx={{ px: 3, pb: 3 }}>
+          <Button onClick={onClose} disabled={saving}>Cancel</Button>
+          <Button type="submit" variant="contained" disabled={saving}>
+            {saving ? 'Processing...' : 'Submit Return'}
+          </Button>
+        </DialogActions>
+      </Box>
+    </Dialog>
+  )
+}

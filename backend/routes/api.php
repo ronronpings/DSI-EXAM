@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\CustomerController;
 use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\ProductController;
 use App\Http\Controllers\Api\SaleController;
+use App\Http\Controllers\Api\SaleReturnController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\ReportController;
 use Illuminate\Support\Facades\Route;
@@ -44,6 +45,10 @@ Route::middleware('auth:sanctum')->group(function () {
         ->middleware('permission:manage_products');
 
     Route::apiResource('sales', SaleController::class)
+        ->middleware('permission:manage_sales');
+    Route::get('/sales/{sale}/returns', [SaleReturnController::class, 'index'])
+        ->middleware('permission:manage_sales');
+    Route::post('/sales/{sale}/returns', [SaleReturnController::class, 'store'])
         ->middleware('permission:manage_sales');
 
     Route::get('/users/roles', [UserController::class, 'roles'])
