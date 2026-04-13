@@ -8,10 +8,21 @@ import ReportsPage from '../pages/ReportsPage.jsx'
 import SalesPage from '../pages/SalesPage.jsx'
 import UsersPage from '../pages/UsersPage.jsx'
 
-function ProtectedLayout() {
-  const token = localStorage.getItem('token')
+import { useAuth } from '../utils/AuthContext.jsx'
+import { CircularProgress, Box } from '@mui/material'
 
-  if (!token) {
+function ProtectedLayout() {
+  const { user, loading } = useAuth()
+
+  if (loading) {
+    return (
+      <Box sx={{ display: 'flex', height: '100vh', alignItems: 'center', justifyContent: 'center' }}>
+        <CircularProgress />
+      </Box>
+    )
+  }
+
+  if (!user) {
     return <Navigate to="/login" replace />
   }
 
@@ -19,9 +30,11 @@ function ProtectedLayout() {
 }
 
 function PublicOnlyRoute({ children }) {
-  const token = localStorage.getItem('token')
+  const { user, loading } = useAuth()
 
-  if (token) {
+  if (loading) return null
+
+  if (user) {
     return <Navigate to="/dashboard" replace />
   }
 

@@ -2,11 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\SalesReportExport;
 use App\Models\Sale;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Symfony\Component\HttpFoundation\StreamedResponse;
+use Maatwebsite\Excel\Facades\Excel;
 
 class ReportController extends Controller
 {
@@ -27,7 +28,7 @@ class ReportController extends Controller
     {
         $sales = $this->salesQuery($request)->get();
 
-        $pdf = Pdf::loadView('reports.sales-pdf', [
+        $pdf = Pdf::loadView('sales-pdf', [
             'sales' => $sales,
             'generatedAt' => now(),
             'filters' => [
@@ -44,44 +45,24 @@ class ReportController extends Controller
         return $pdf->stream('sales-report.pdf');
     }
 
-    public function downloadSalesCsv(Request $request): StreamedResponse
+    public function downloadSalesCsv(Request $request)
     {
         $sales = $this->salesQuery($request)->get();
-        $filename = 'sales-report-' . now()->format('Ymd-His') . '.csv';
+        $filters = [
+            'date_from' => $request->get('date_from'),
+            'date_to' => $request->get('date_to'),
+            'status' => $request->get('status'),
+        ];
+        $summary = [
+            'total_sales' => (float) $sales->sum('total_amount'),
+            'total_transactions' => $sales->count(),
+        ];
+        $filename = 'sales-report-' . now()->format('Ymd-His') . '.xlsx';
 
-        return response()->streamDownload(function () use ($sales) {
-            $handle = fopen('php://output', 'w');
-
-            fputcsv($handle, [
-                'Invoice Number',
-                'Customer',
-                'Cashier',
-                'Subtotal',
-                'Tax',
-                'Discount',
-                'Total Amount',
-                'Status',
-                'Sold At',
-            ]);
-
-            foreach ($sales as $sale) {
-                fputcsv($handle, [
-                    $sale->invoice_number,
-                    trim(($sale->customer->first_name ?? '') . ' ' . ($sale->customer->last_name ?? '')),
-                    $sale->cashier->name ?? 'N/A',
-                    $sale->subtotal,
-                    $sale->tax,
-                    $sale->discount,
-                    $sale->total_amount,
-                    $sale->status,
-                    $sale->sold_at,
-                ]);
-            }
-
-            fclose($handle);
-        }, $filename, [
-            'Content-Type' => 'text/csv',
-        ]);
+        return Excel::download(
+            new SalesReportExport($sales, $filters, $summary),
+            $filename
+        );
     }
 
     protected function salesQuery(Request $request)

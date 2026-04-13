@@ -93,7 +93,10 @@ class RolePermissionSeeder extends Seeder
                     'customer.create',
                     'product.view',
                     'sales.view',
+                    'sales.update',
                     'sales.create',
+                    'sales.create',
+                    'sales.delete',
                     'sales.return',
                 ])
                 ->pluck('id')
