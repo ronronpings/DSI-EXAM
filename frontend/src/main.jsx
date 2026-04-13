@@ -5,6 +5,7 @@ import { Toaster } from 'react-hot-toast'
 import App from './App.jsx'
 import theme from './theme/theme.js'
 import './index.css'
+import { AuthProvider } from './utils/AuthContext.jsx'
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
@@ -34,7 +35,9 @@ createRoot(document.getElementById('root')).render(
           },
         }}
       />
-      <App />
+      <AuthProvider>
+        <App />
+      </AuthProvider>
       
     </ThemeProvider>
   </StrictMode>,

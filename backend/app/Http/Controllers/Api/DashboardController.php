@@ -15,8 +15,6 @@ class DashboardController extends Controller
     public function index(): JsonResponse
     {
         $today = now()->toDateString();
-        $monthStart = now()->startOfMonth()->toDateString();
-        $monthEnd = now()->endOfMonth()->toDateString();
 
         $salesToday = Sale::query()
             ->whereDate('sold_at', $today)
@@ -24,7 +22,7 @@ class DashboardController extends Controller
             ->sum('total_amount');
 
         $salesThisMonth = Sale::query()
-            ->whereBetween(DB::raw('DATE(sold_at)'), [$monthStart, $monthEnd])
+            ->whereBetween('sold_at', [now()->startOfMonth(), now()->endOfMonth()])
             ->where('status', 'paid')
             ->sum('total_amount');
 
@@ -38,11 +36,9 @@ class DashboardController extends Controller
             ->get(['id', 'sku', 'name', 'stock_quantity']);
 
         $topProducts = SaleItem::query()
-            ->select(
-                'product_id',
-                DB::raw('SUM(quantity) as total_quantity'),
-                DB::raw('SUM(line_total) as total_revenue')
-            )
+            ->select('product_id')
+            ->selectRaw('SUM(quantity) as total_quantity')
+            ->selectRaw('SUM(line_total) as total_revenue')
             ->with('product:id,sku,name')
             ->groupBy('product_id')
             ->orderByDesc('total_quantity')

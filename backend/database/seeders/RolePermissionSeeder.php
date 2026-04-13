@@ -4,25 +4,41 @@ namespace Database\Seeders;
 
 use App\Models\Permission;
 use App\Models\Role;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
 class RolePermissionSeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     */
     public function run(): void
     {
-        //
         $permissions = [
-            'view_dashboard' => 'View Dashboards',
-            'manage_customers' => 'Manage Customers',
-            'manage_products' => 'Manage Products',
-            'manage_sales' => 'Manage Sales',
-            'view_reports' => 'View Reports',
-            'manage_users' => 'Manage Users'
+            'view_dashboard' => 'View Dashboard',
+
+            'customer.view' => 'View Customers',
+            'customer.create' => 'Create Customer',
+            'customer.update' => 'Update Customer',
+            'customer.delete' => 'Delete Customer',
+
+            'product.view' => 'View Products',
+            'product.create' => 'Create Product',
+            'product.update' => 'Update Product',
+            'product.delete' => 'Delete Product',
+
+            'sales.view' => 'View Sales',
+            'sales.create' => 'Create Sale',
+            'sales.update' => 'Update Sale',
+            'sales.delete' => 'Delete Sale',
+            'sales.return' => 'Process Sales Return',
+
+            'reports.view' => 'View Reports',
+
+            'users.view' => 'View Users',
+            'users.create' => 'Create User',
+            'users.update' => 'Update User',
+            'users.delete' => 'Delete User',
+            'users.assign_roles' => 'Assign Roles',
+            'users.assign_permissions' => 'Assign Permissions',
         ];
+
         foreach ($permissions as $name => $displayName) {
             Permission::query()->updateOrCreate(
                 ['name' => $name],
@@ -44,19 +60,42 @@ class RolePermissionSeeder extends Seeder
             ['name' => 'cashier'],
             ['display_name' => 'Cashier']
         );
-         $allPermissionIds = Permission::query()->pluck('id')->all();
-        $admin->permissions()->sync($allPermissionIds);
+
+        $admin->permissions()->sync(
+            Permission::query()->pluck('id')->all()
+        );
 
         $manager->permissions()->sync(
             Permission::query()
-                ->whereIn('name', ['view_dashboard', 'manage_customers', 'manage_products', 'manage_sales', 'view_reports'])
+                ->whereIn('name', [
+                    'view_dashboard',
+                    'customer.view',
+                    'customer.create',
+                    'customer.update',
+                    'product.view',
+                    'product.create',
+                    'product.update',
+                    'sales.view',
+                    'sales.create',
+                    'sales.update',
+                    'sales.return',
+                    'reports.view',
+                ])
                 ->pluck('id')
                 ->all()
         );
 
         $cashier->permissions()->sync(
             Permission::query()
-                ->whereIn('name', ['manage_customers', 'manage_sales'])
+                ->whereIn('name', [
+                    'view_dashboard',
+                    'customer.view',
+                    'customer.create',
+                    'product.view',
+                    'sales.view',
+                    'sales.create',
+                    'sales.return',
+                ])
                 ->pluck('id')
                 ->all()
         );

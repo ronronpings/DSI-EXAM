@@ -49,4 +49,31 @@ class AuthController extends Controller
             'message' => 'Logout successful.',
         ]);
     }
+
+    public function me(Request $request)
+    {
+        $user = $request->user();
+        
+        // Get all permissions from roles
+        $rolePermissions = $user->roles()
+            ->with('permissions')
+            ->get()
+            ->pluck('permissions')
+            ->flatten()
+            ->pluck('name');
+
+        // Get direct permissions
+        $directPermissions = $user->permissions()->pluck('name');
+
+        // Combine and unique
+        $allPermissions = $rolePermissions
+            ->concat($directPermissions)
+            ->unique()
+            ->values();
+
+        return response()->json([
+            'user' => $user->load('roles'),
+            'permissions' => $allPermissions,
+        ]);
+    }
 }

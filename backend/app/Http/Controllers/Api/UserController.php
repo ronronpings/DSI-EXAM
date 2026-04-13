@@ -11,13 +11,16 @@ use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use App\Http\Requests\AssignPermissionRequest;
+use App\Models\Permission;
+
 
 class UserController extends Controller
 {
     public function index(Request $request): JsonResponse
     {
         $users = User::query()
-            ->with('roles:id,name,display_name')
+            ->with('roles:id,name,display_name', 'permissions:id,name,display_name')
             ->when($request->filled('search'), function ($query) use ($request) {
                 $search = preg_replace('/\s+/', '', $request->string('search'));
 
@@ -49,14 +52,20 @@ class UserController extends Controller
 
         return response()->json([
             'message' => 'User created successfully.',
-            'data' => $user->load('roles:id,name,display_name'),
+            'data' => $user->load([
+                'roles:id,name,display_name',
+                'permissions:id,name,display_name',
+            ]),
         ], 201);
     }
 
     public function show(User $user): JsonResponse
     {
         return response()->json([
-            'data' => $user->load('roles:id,name,display_name'),
+            'data' => $user->load([
+                'roles:id,name,display_name',
+                'permissions:id,name,display_name',
+            ]),
         ]);
     }
 
@@ -81,7 +90,10 @@ class UserController extends Controller
 
         return response()->json([
             'message' => 'User updated successfully.',
-            'data' => $user->fresh()->load('roles:id,name,display_name'),
+            'data' => $user->fresh()->load([
+                'roles:id,name,display_name',
+                'permissions:id,name,display_name',
+            ]),
         ]);
     }
 
@@ -94,6 +106,7 @@ class UserController extends Controller
         }
 
         $user->roles()->detach();
+        $user->permissions()->detach();
         $user->tokens()->delete();
         $user->delete();
 
@@ -122,4 +135,26 @@ class UserController extends Controller
             'data' => $user->fresh()->load('roles:id,name,display_name'),
         ]);
     }
+    public function permissions(): JsonResponse
+    {
+        return response()->json([
+            'data' => Permission::query()
+                ->orderBy('display_name')
+                ->get(['id', 'name', 'display_name']),
+        ]);
+    }
+    public function assignPermissions(AssignPermissionRequest $request, User $user): JsonResponse
+    {
+        $user->permissions()->sync($request->validated('permissions'));
+
+        return response()->json([
+            'message' => 'Permissions assigned successfully.',
+            'data' => $user->fresh()->load([
+                'roles:id,name,display_name',
+                'permissions:id,name,display_name',
+            ]),
+        ]);
+    }
+
+
 }

@@ -19,7 +19,6 @@ class UserSeeder extends Seeder
         $managerRole = Role::where('name', 'manager')->first();
         $cashierRole = Role::where('name', 'cashier')->first();
 
-        // 1. Admin
         $admin = User::firstOrCreate(
             ['email' => 'admin@gmail.com'],
             [
@@ -31,7 +30,7 @@ class UserSeeder extends Seeder
             $admin->roles()->syncWithoutDetaching([$adminRole->id]);
         }
 
-        // 2. Manager
+    
         $manager = User::firstOrCreate(
             ['email' => 'manager@gmail.com'],
             [
@@ -43,7 +42,7 @@ class UserSeeder extends Seeder
             $manager->roles()->syncWithoutDetaching([$managerRole->id]);
         }
 
-        // 3. Cashier
+       
         $cashier = User::firstOrCreate(
             ['email' => 'cashier@gmail.com'],
             [

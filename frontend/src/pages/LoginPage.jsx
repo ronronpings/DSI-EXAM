@@ -17,9 +17,11 @@ import {
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import api from '../api/axios.js'
+import { useAuth } from '../utils/AuthContext.jsx'
 
 function LoginPage() {
   const navigate = useNavigate()
+  const { login } = useAuth()
 
   const [form, setForm] = useState({
     email: '',
@@ -45,8 +47,7 @@ function LoginPage() {
     try {
       const { data } = await api.post('/auth/login', form)
 
-      localStorage.setItem('token', data.token)
-      localStorage.setItem('user', JSON.stringify(data.user))
+      login(data.user, data.token)
 
       navigate('/dashboard', { replace: true })
     } catch (err) {

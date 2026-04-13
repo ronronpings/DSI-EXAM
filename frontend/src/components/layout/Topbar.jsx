@@ -21,21 +21,14 @@ const titles = {
   '/users': 'User Management',
 }
 
+import { useAuth } from '../../utils/AuthContext.jsx'
+
 function Topbar({ drawerWidth }) {
   const location = useLocation()
-  const navigate = useNavigate()
-  const user = JSON.parse(localStorage.getItem('user') || '{}')
+  const { user, logout } = useAuth()
 
-  const handleLogout = async () => {
-     try {
-      await api.post('/auth/logout')
-    } catch {
-      // Ignore logout API failures and still clear local session.
-    } finally {
-      localStorage.removeItem('token')
-      localStorage.removeItem('user')
-      navigate('/login', { replace: true })
-    }
+  const handleLogout = () => {
+    logout()
   }
 
   return (
@@ -56,24 +49,6 @@ function Topbar({ drawerWidth }) {
           <Typography variant="h6">{titles[location.pathname] ?? 'Sales Platform'}</Typography>
         </Box>
 
-        <TextField
-          size="small"
-          placeholder="Search module..."
-          sx={{
-            width: 260,
-            display: { xs: 'none', lg: 'flex' },
-            '& .MuiOutlinedInput-root': {
-              backgroundColor: '#ffffff',
-            },
-          }}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <SearchRoundedIcon fontSize="small" />
-              </InputAdornment>
-            ),
-          }}
-        />
 
         <Button color="inherit" startIcon={<LogoutRoundedIcon />} onClick={handleLogout}>
           Logout
@@ -88,7 +63,7 @@ function Topbar({ drawerWidth }) {
             '&:hover': { backgroundColor: '#1e293b' },
           }}
         >
-          {(user.name?.[0] || '').toUpperCase()}
+          {(user?.name?.[0] || '').toUpperCase()}
         </IconButton>
       </Toolbar>
     </AppBar>

@@ -17,17 +17,26 @@ import {
   Typography,
 } from '@mui/material'
 import { NavLink } from 'react-router-dom'
+import { useAuth } from '../../utils/AuthContext.jsx'
 
 const menuItems = [
-  { label: 'Dashboard', path: '/dashboard', icon: <DashboardRoundedIcon /> },
-  { label: 'Customers', path: '/customers', icon: <Groups2RoundedIcon /> },
-  { label: 'Products', path: '/products', icon: <Inventory2RoundedIcon /> },
-  { label: 'Sales', path: '/sales', icon: <PointOfSaleRoundedIcon /> },
-  { label: 'Reports', path: '/reports', icon: <AssessmentRoundedIcon /> },
-  { label: 'Users', path: '/users', icon: <ManageAccountsRoundedIcon /> },
+  { label: 'Dashboard', path: '/dashboard', icon: <DashboardRoundedIcon />, permission: 'view_dashboard' },
+  { label: 'Customers', path: '/customers', icon: <Groups2RoundedIcon />, permission: 'customer.view' },
+  { label: 'Products', path: '/products', icon: <Inventory2RoundedIcon />, permission: 'product.view' },
+  { label: 'Sales', path: '/sales', icon: <PointOfSaleRoundedIcon />, permission: 'sales.view' },
+  { label: 'Reports', path: '/reports', icon: <AssessmentRoundedIcon />, permission: 'reports.view' },
+  { label: 'Users', path: '/users', icon: <ManageAccountsRoundedIcon />, permission: 'users.view' },
 ]
 
 function Sidebar({ drawerWidth }) {
+  const { user, hasPermission } = useAuth()
+  const filteredItems = menuItems.filter(item => hasPermission(item.permission))
+
+  // Determine the display role
+  const roleDisplay = user?.roles?.[0]?.display_name === 'Administrator' 
+    ? 'Admin' 
+    : (user?.roles?.[0]?.display_name || 'Admin')
+
   return (
     <Drawer
       variant="permanent"
@@ -58,7 +67,7 @@ function Sidebar({ drawerWidth }) {
             <StorefrontRoundedIcon sx={{ color: '#fff' }} />
           </Box>
           <Typography variant="h6" sx={{ color: '#f8fafc' }}>
-            Sales Admin
+            Sales {roleDisplay}
           </Typography>
           <Typography variant="body2" sx={{ color: 'rgba(226, 232, 240, 0.72)' }}>
             Tech company operations panel
@@ -69,7 +78,7 @@ function Sidebar({ drawerWidth }) {
       <Divider sx={{ borderColor: 'rgba(148, 163, 184, 0.16)', mb: 2 }} />
 
       <List sx={{ gap: 1, display: 'grid' }}>
-        {menuItems.map((item) => (
+        {filteredItems.map((item) => (
           <ListItemButton
             key={item.path}
             component={NavLink}
